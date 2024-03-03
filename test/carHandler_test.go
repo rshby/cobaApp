@@ -3,6 +3,7 @@ package test
 import (
 	"cobaApp/customError"
 	"cobaApp/handler"
+	"cobaApp/helper"
 	"cobaApp/model/dto"
 	mck "cobaApp/test/mock"
 	"encoding/json"
@@ -76,6 +77,167 @@ func TestInsertCarHandler(t *testing.T) {
 		assert.Equal(t, http.StatusNotFound, int(responseBody["status_code"].(float64)))
 		assert.Equal(t, "not found", responseBody["status"].(string))
 		assert.Equal(t, errMessage, responseBody["message"].(string))
+		carService.Mock.AssertExpectations(t)
+	})
+}
+
+func TestGetAllCarHandler(t *testing.T) {
+	t.Run("test get all error not found", func(t *testing.T) {
+		carService := mck.NewCarServiceMock()
+		carHandler := handler.NewCarHandler(carService)
+
+		app := fiber.New()
+		app.Get("/", carHandler.GetAll)
+
+		// mock
+		errMessage := "record not found"
+		carService.Mock.On("GetAll", mock.Anything).
+			Return(nil, customError.NewNotFoundError(errMessage))
+
+		// create request
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+
+		// receive response
+		response, err := app.Test(request)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusNotFound, response.StatusCode)
+
+		// receive response_body
+		body, err := io.ReadAll(response.Body)
+		responseBody := map[string]any{}
+		json.Unmarshal(body, &responseBody)
+
+		assert.Equal(t, http.StatusNotFound, int(responseBody["status_code"].(float64)))
+		assert.Equal(t, helper.CodeToStatus(http.StatusNotFound), responseBody["status"].(string))
+	})
+	t.Run("test get all error bad request", func(t *testing.T) {
+		carService := mck.NewCarServiceMock()
+		carHandler := handler.NewCarHandler(carService)
+
+		app := fiber.New()
+		app.Get("/", carHandler.GetAll)
+
+		// mock
+		errMessage := "error bad request"
+		carService.Mock.On("GetAll", mock.Anything).Return(nil, customError.NewBadRequestError(errMessage))
+
+		// create request
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+
+		// receive response
+		response, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+
+		// receive response_body
+		body, err := io.ReadAll(response.Body)
+		responseBody := map[string]any{}
+		json.Unmarshal(body, &responseBody)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusBadRequest, int(responseBody["status_code"].(float64)))
+		assert.Equal(t, helper.CodeToStatus(http.StatusBadRequest), responseBody["status"].(string))
+		carService.Mock.AssertExpectations(t)
+	})
+	t.Run("test get all error internal server", func(t *testing.T) {
+		carService := mck.NewCarServiceMock()
+		carHandler := handler.NewCarHandler(carService)
+
+		app := fiber.New()
+		app.Get("/", carHandler.GetAll)
+
+		// mock
+		errorMessage := "error internal server error"
+		carService.Mock.On("GetAll", mock.Anything).Return(nil, customError.NewInternalServerError(errorMessage))
+
+		// create request
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+
+		// receive response
+		response, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusInternalServerError, response.StatusCode)
+
+		// receive response_body
+		body, err := io.ReadAll(response.Body)
+		responseBody := map[string]any{}
+		json.Unmarshal(body, &responseBody)
+
+		// test
+		assert.Equal(t, http.StatusInternalServerError, int(responseBody["status_code"].(float64)))
+		assert.Equal(t, helper.CodeToStatus(http.StatusInternalServerError), responseBody["status"].(string))
+		assert.Equal(t, errorMessage, responseBody["message"].(string))
+		carService.Mock.AssertExpectations(t)
+	})
+	t.Run("test get all success", func(t *testing.T) {
+		carService := mck.NewCarServiceMock()
+		carHandler := handler.NewCarHandler(carService)
+
+		app := fiber.New()
+		app.Get("/", carHandler.GetAll)
+
+		// mock
+		carService.Mock.On("GetAll", mock.Anything).Return([]dto.InsertCarResponse{
+			{
+				Id:          1,
+				Name:        "Toyota",
+				Price:       614000000,
+				ReleaseDate: "2020-10-10",
+			},
+		}, nil)
+
+		// create request
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+
+		// receive response
+		response, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusOK, response.StatusCode)
+
+		// receive response_body
+		body, err := io.ReadAll(response.Body)
+		responseBody := map[string]any{}
+		json.Unmarshal(body, &responseBody)
+
+		// test dulu
+		assert.Equal(t, http.StatusOK, int(responseBody["status_code"].(float64)))
+		assert.Equal(t, helper.CodeToStatus(http.StatusOK), responseBody["status"].(string))
+		assert.Equal(t, "success get all data cars", responseBody["message"].(string))
+		carService.Mock.AssertExpectations(t)
+	})
+}
+
+func TestGetDetailHandler(t *testing.T) {
+	t.Run("test get detail failed convert int", func(t *testing.T) {
+		carService := mck.NewCarServiceMock()
+		carHandler := handler.NewCarHandler(carService)
+
+		app := fiber.New()
+		app.Get("/:id", carHandler.GetDetail)
+
+		// create request
+		request := httptest.NewRequest(http.MethodGet, "/wasd", nil)
+
+		// receive response
+		response, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+
+		// receive response_body
+		body, err := io.ReadAll(response.Body)
+		responseBody := map[string]any{}
+		json.Unmarshal(body, &responseBody)
+
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusBadRequest, int(responseBody["status_code"].(float64)))
+		assert.Equal(t, helper.CodeToStatus(http.StatusBadRequest), responseBody["status"].(string))
+		assert.Equal(t, "cant convert id to int", responseBody["message"].(string))
 		carService.Mock.AssertExpectations(t)
 	})
 }
