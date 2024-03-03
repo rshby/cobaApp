@@ -113,22 +113,30 @@ func (c *CarHandler) GetAll(ctx *fiber.Ctx) error {
 		}
 
 		ctx.Status(statusCode)
-		return ctx.JSON(&dto.ApiResponse{
+
+		response := dto.ApiResponse{
 			StatusCode: statusCode,
 			Status:     helper.CodeToStatus(statusCode),
 			Message:    err.Error(),
-		})
+		}
+		resJson, _ := json.Marshal(&response)
+		span.LogFields(log.String("response", string(resJson)))
+		return ctx.JSON(&response)
 	}
 
 	// success get data
 	statusCode := http.StatusOK
 	ctx.Status(statusCode)
-	return ctx.JSON(&dto.ApiResponse{
+
+	response := dto.ApiResponse{
 		StatusCode: statusCode,
 		Status:     helper.CodeToStatus(statusCode),
 		Message:    "success get all data cars",
 		Data:       cars,
-	})
+	}
+	resJson, _ := json.Marshal(&response)
+	span.LogFields(log.String("response", string(resJson)))
+	return ctx.JSON(&response)
 }
 
 // handler get detail
@@ -137,15 +145,19 @@ func (c *CarHandler) GetDetail(ctx *fiber.Ctx) error {
 	span, ctxTracing := opentracing.StartSpanFromContext(ctx.Context(), "Handler GetDetail")
 	defer span.Finish()
 
-	id, err := ctx.ParamsInt("id", 0)
+	id, err := ctx.ParamsInt("id")
 	if err != nil {
 		statusCode := http.StatusBadRequest
 		ctx.Status(statusCode)
-		return ctx.JSON(&dto.ApiResponse{
+		response := dto.ApiResponse{
 			StatusCode: statusCode,
 			Status:     helper.CodeToStatus(statusCode),
 			Message:    "cant convert id to int",
-		})
+		}
+		resJson, _ := json.Marshal(&response)
+		span.LogFields(log.String("response", string(resJson)))
+
+		return ctx.JSON(response)
 	}
 
 	// call procedure in service
@@ -162,11 +174,17 @@ func (c *CarHandler) GetDetail(ctx *fiber.Ctx) error {
 		}
 
 		ctx.Status(statusCode)
-		return ctx.JSON(&dto.ApiResponse{
+
+		response := dto.ApiResponse{
 			StatusCode: statusCode,
 			Status:     helper.CodeToStatus(statusCode),
 			Message:    err.Error(),
-		})
+		}
+
+		resJson, _ := json.Marshal(&response)
+		span.LogFields(log.String("response", string(resJson)))
+
+		return ctx.JSON(&response)
 	}
 
 	// success get detail
