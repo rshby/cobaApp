@@ -1,0 +1,56 @@
+version: "3.8"
+
+# network
+networks:
+  coba-network:
+    name: coba-network
+    driver: bridge
+
+services:
+  coba-mysql:
+    image: mysql:latest
+    container_name: coba-mysql
+    restart: on-failure
+    ports:
+      - target: 3306
+        published: 3306
+        protocol: tcp
+        mode: host
+    networks:
+      - coba-network
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  coba-jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: coba-jaeger
+    ports:
+      - target: 16686
+        published: 16686
+        protocol: tcp
+        mode: host
+      - target: 6831
+        published: 6831
+        protocol: udp
+        mode: host
+    networks:
+      - coba-network
+    depends_on:
+      - coba-mysql
+
+  coba-app:
+    build: .
+    image: rshby/coba-app
+    container_name: coba-app
+    ports:
+      - target: 5005
+        published: 5005
+        protocol: tcp
+        mode: host
+    networks:
+      - coba-network
+    depends_on:
+      - coba-mysql
+

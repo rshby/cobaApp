@@ -1,0 +1,18 @@
+{
+  "app" : {
+    "name" : "cobaApp",
+    "port" : 5005,
+    "author" : "Reo Sahobby"
+  },
+  "database" : {
+    "port" : 3306,
+    "user" : "root",
+    "password" : "root",
+    "host" : "localhost",
+    "name" : "cobaApp"
+  },
+  "jaeger" : {
+    "host" : "localhost",
+    "port" : 6831
+  }
+}
