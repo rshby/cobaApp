@@ -31,7 +31,7 @@ func main() {
 	db := database.ConnectDatabase(cfg, log)
 	defer db.Close()
 
-	appServer := server.NewAppServer(db, cfg)
+	appServer := server.NewAppServer(db, cfg, log)
 	if err := appServer.RunServer(); err != nil {
 		log.Fatalf("cant start app : %v", err)
 	} else {

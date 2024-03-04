@@ -11,17 +11,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 )
 
 type CarHandler struct {
 	CarService service.ICarService
+	LogConsole *logrus.Logger
 }
 
 // function provider
-func NewCarHandler(carService service.ICarService) *CarHandler {
-	return &CarHandler{CarService: carService}
+func NewCarHandler(carService service.ICarService, log *logrus.Logger) *CarHandler {
+	return &CarHandler{CarService: carService, LogConsole: log}
 }
 
 // handler insert data

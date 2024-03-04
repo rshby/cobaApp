@@ -18,7 +18,7 @@ func GenerateTracing(config config.IConfig, log *logrus.Logger, serviceName stri
 			Param: 1,
 		},
 		Reporter: &jaegerConfig.ReporterConfig{
-			LogSpans: true,
+			LogSpans: false,
 			LocalAgentHostPort: fmt.Sprintf("%v:%v",
 				config.GetConfig().Jaeger.Host, config.GetConfig().Jaeger.Port),
 		},

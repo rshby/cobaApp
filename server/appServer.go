@@ -3,6 +3,7 @@ package server
 import (
 	"cobaApp/config"
 	"cobaApp/handler"
+	"cobaApp/middleware"
 	"cobaApp/repository"
 	"cobaApp/router"
 	"cobaApp/service"
@@ -10,7 +11,7 @@ import (
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/sirupsen/logrus"
 )
 
 type AppServer struct {
@@ -18,7 +19,7 @@ type AppServer struct {
 	Config config.IConfig
 }
 
-func NewAppServer(db *sql.DB, config config.IConfig) IServer {
+func NewAppServer(db *sql.DB, config config.IConfig, log *logrus.Logger) IServer {
 	// register validate
 	validate := validator.New()
 
@@ -29,13 +30,14 @@ func NewAppServer(db *sql.DB, config config.IConfig) IServer {
 	carService := service.NewCarService(db, validate, carRepo)
 
 	// register handler
-	carHandler := handler.NewCarHandler(carService)
+	carHandler := handler.NewCarHandler(carService, log)
 
 	app := fiber.New(fiber.Config{
 		Prefork: false,
 	})
 
-	app.Use(logger.New())
+	app.Use(middleware.LoggerMiddleware(log))
+	//app.Use(logger.New())
 	v1 := app.Group("/v1")
 
 	// car router
