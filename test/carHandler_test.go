@@ -240,4 +240,98 @@ func TestGetDetailHandler(t *testing.T) {
 		assert.Equal(t, "cant convert id to int", responseBody["message"].(string))
 		carService.Mock.AssertExpectations(t)
 	})
+	t.Run("test get detail not found", func(t *testing.T) {
+		carService := mck.NewCarServiceMock()
+		carHandler := handler.NewCarHandler(carService)
+
+		app := fiber.New()
+		app.Get("/:id", carHandler.GetDetail)
+
+		// mock
+		errMessage := "record not found"
+		carService.Mock.On("GetDetail", mock.Anything, mock.Anything).Return(nil, customError.NewNotFoundError(errMessage))
+
+		// create request
+		request := httptest.NewRequest(http.MethodGet, "/999", nil)
+
+		// receive response
+		response, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusNotFound, response.StatusCode)
+
+		// receive response_body
+		body, err := io.ReadAll(response.Body)
+		responseBody := map[string]any{}
+		json.Unmarshal(body, &responseBody)
+
+		assert.Equal(t, http.StatusNotFound, int(responseBody["status_code"].(float64)))
+		assert.Equal(t, helper.CodeToStatus(http.StatusNotFound), responseBody["status"].(string))
+		assert.Equal(t, errMessage, responseBody["message"].(string))
+		carService.Mock.AssertExpectations(t)
+	})
+	t.Run("test get detail internal server error", func(t *testing.T) {
+		carService := mck.NewCarServiceMock()
+		carHandler := handler.NewCarHandler(carService)
+
+		app := fiber.New()
+		app.Get("/:id", carHandler.GetDetail)
+
+		// mock
+		errMessage := "error internal server error"
+		carService.Mock.On("GetDetail", mock.Anything, mock.Anything).
+			Return(nil, customError.NewInternalServerError(errMessage))
+
+		// create request
+		request := httptest.NewRequest(http.MethodGet, "/1", nil)
+
+		// receive response
+		response, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusInternalServerError, response.StatusCode)
+
+		// receive response_body
+		body, err := io.ReadAll(response.Body)
+		responseBody := map[string]any{}
+		json.Unmarshal(body, &responseBody)
+
+		assert.Equal(t, http.StatusInternalServerError, int(responseBody["status_code"].(float64)))
+		assert.Equal(t, helper.CodeToStatus(http.StatusInternalServerError), responseBody["status"].(string))
+		assert.Equal(t, errMessage, responseBody["message"].(string))
+		carService.Mock.AssertExpectations(t)
+	})
+	t.Run("test get detail success", func(t *testing.T) {
+		carService := mck.NewCarServiceMock()
+		carHandler := handler.NewCarHandler(carService)
+
+		app := fiber.New()
+		app.Get("/:id", carHandler.GetDetail)
+
+		// mock
+		carService.Mock.On("GetDetail", mock.Anything, mock.Anything).Return(&dto.InsertCarResponse{
+			Id:          1,
+			Name:        "Toyota",
+			Price:       12345,
+			ReleaseDate: "2020-10-10",
+		}, nil)
+
+		// test -> create request
+		request := httptest.NewRequest(http.MethodGet, "/1", nil)
+
+		// receive response
+		response, err := app.Test(request)
+		assert.Nil(t, err)
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusOK, response.StatusCode)
+
+		// receive response_body
+		body, err := io.ReadAll(response.Body)
+		responseBody := map[string]any{}
+		json.Unmarshal(body, &responseBody)
+
+		assert.Equal(t, http.StatusOK, int(responseBody["status_code"].(float64)))
+		assert.Equal(t, "ok", helper.CodeToStatus(int(responseBody["status_code"].(float64))))
+		carService.Mock.AssertExpectations(t)
+	})
 }
