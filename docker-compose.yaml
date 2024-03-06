@@ -40,6 +40,20 @@ services:
     depends_on:
       - coba-mysql
 
+  coba-prometheus:
+    image: prom/prometheus
+    container_name: coba-prometheus
+    ports:
+      - target: 9090
+        published: 9090
+        protocol: tcp
+        mode: host
+    restart: on-failure
+    networks:
+      - coba-network
+    volumes:
+      - ./metrics/prometheus.yml:/etc/prometheus/prometheus.yml
+
   coba-app:
     build: .
     image: rshby/coba-app

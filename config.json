@@ -8,11 +8,11 @@
     "port" : 3306,
     "user" : "root",
     "password" : "root",
-    "host" : "localhost",
+    "host" : "coba-mysql",
     "name" : "cobaApp"
   },
   "jaeger" : {
-    "host" : "localhost",
+    "host" : "coba-jaeger",
     "port" : 6831
   }
 }

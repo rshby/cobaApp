@@ -3,12 +3,12 @@ package server
 import (
 	"cobaApp/config"
 	"cobaApp/handler"
-	"cobaApp/middleware"
 	"cobaApp/repository"
 	"cobaApp/router"
 	"cobaApp/service"
 	"database/sql"
 	"fmt"
+	"github.com/ansrivas/fiberprometheus/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -36,8 +36,10 @@ func NewAppServer(db *sql.DB, config config.IConfig, log *logrus.Logger) IServer
 		Prefork: false,
 	})
 
-	app.Use(middleware.LoggerMiddleware(log))
-	//app.Use(logger.New())
+	prometheus := fiberprometheus.New("cobaApp-metrics")
+	prometheus.RegisterAt(app, "/metrics")
+	app.Use(prometheus.Middleware)
+
 	v1 := app.Group("/v1")
 
 	// car router
